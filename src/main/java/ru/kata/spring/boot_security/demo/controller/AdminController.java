@@ -3,6 +3,7 @@ package ru.kata.spring.boot_security.demo.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
@@ -11,13 +12,14 @@ import ru.kata.spring.boot_security.demo.service.UserService;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
     private final RoleService roleService;
-    private UserService userService;
+    private final UserService userService;
 
     @Autowired
     public AdminController(UserService userService, RoleService roleService) {
@@ -47,16 +49,24 @@ public class AdminController {
 
     @GetMapping("/change-user/{id}")
     public String changeUser(@PathVariable Long id, Model model) {
-        model.addAttribute("user", userService.getUserById(id)); // Передаем одного пользователя
+        User user = userService.getUserById(id);
+        model.addAttribute("user",user); // Передаем одного пользователя
         model.addAttribute("allRoles", roleService.getAllRoles());
+
+        List<Long> selectedRoleIds = user.getRoles().stream()
+                .map(Role::getId)
+                .collect(Collectors.toList());
+        model.addAttribute("selectedRoleIds", selectedRoleIds);
         return "change-user";
     }
 
     @PostMapping("/update-user/{id}")
-    public String updateUser(@PathVariable Long id, @ModelAttribute User updatedUser, @RequestParam("roles") List<Long> roleIds) {
+    public String updateUser(@PathVariable Long id,
+                             @ModelAttribute User updatedUser,
+                             @RequestParam("roles") List<Long> roleIds) {
         Set<Role> newRoles = roleService.getRolesById(roleIds);
         updatedUser.setRoles(newRoles);
-        userService.editUser(id, updatedUser);
+        userService.updateUser(id, updatedUser);
         return "redirect:/admin";
     }
 
