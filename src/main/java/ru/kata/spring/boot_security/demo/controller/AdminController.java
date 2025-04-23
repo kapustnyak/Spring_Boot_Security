@@ -10,9 +10,9 @@ import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.service.RoleService;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -28,10 +28,15 @@ public class AdminController {
     }
 
     @GetMapping
-    public String admin(Model model) {
+    public String admin(Model model, Principal principal) {
         model.addAttribute("users", userService.getAllUsers());
         model.addAttribute("user", new User());
         model.addAttribute("allRoles", roleService.getAllRoles());
+
+        if (principal != null) {
+            User loggedUser = userService.getUserByUsername(principal.getName());
+            model.addAttribute("user", loggedUser);
+        }
         return "admin";
     }
 
@@ -47,25 +52,23 @@ public class AdminController {
         return "redirect:/admin";
     }
 
-    @GetMapping("/change-user/{id}")
-    public String changeUser(@PathVariable Long id, Model model) {
-        User user = userService.getUserById(id);
-        model.addAttribute("user",user); // Передаем одного пользователя
-        model.addAttribute("allRoles", roleService.getAllRoles());
-
-        List<Long> selectedRoleIds = user.getRoles().stream()
-                .map(Role::getId)
-                .collect(Collectors.toList());
-        model.addAttribute("selectedRoleIds", selectedRoleIds);
-        return "change-user";
-    }
-
     @PostMapping("/update-user/{id}")
     public String updateUser(@PathVariable Long id,
                              @ModelAttribute User updatedUser,
-                             @RequestParam("roles") List<Long> roleIds) {
-        Set<Role> newRoles = roleService.getRolesById(roleIds);
-        updatedUser.setRoles(newRoles);
+                             @RequestParam(value = "roles", required = false) List<Long> roleIds,
+                             BindingResult bindingResult) {
+//        if (bindingResult.hasErrors()) {
+//            return "redirect:/admin?error=validation";
+//        }
+
+        if (roleIds != null && !roleIds.isEmpty()) {
+            Set<Role> newRoles = roleService.getRolesById(roleIds);
+            updatedUser.setRoles(newRoles);
+        } else {
+            User existingUser = userService.getUserById(id);
+            updatedUser.setRoles(existingUser.getRoles());
+        }
+
         userService.updateUser(id, updatedUser);
         return "redirect:/admin";
     }
