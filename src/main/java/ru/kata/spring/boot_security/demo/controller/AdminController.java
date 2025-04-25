@@ -57,19 +57,11 @@ public class AdminController {
                              @ModelAttribute User updatedUser,
                              @RequestParam(value = "roles", required = false) List<Long> roleIds,
                              BindingResult bindingResult) {
-//        if (bindingResult.hasErrors()) {
-//            return "redirect:/admin?error=validation";
-//        }
-
-        if (roleIds != null && !roleIds.isEmpty()) {
-            Set<Role> newRoles = roleService.getRolesById(roleIds);
-            updatedUser.setRoles(newRoles);
-        } else {
-            User existingUser = userService.getUserById(id);
-            updatedUser.setRoles(existingUser.getRoles());
+        if (bindingResult.hasErrors()) {
+            return "redirect:/admin?error=validation";
         }
 
-        userService.updateUser(id, updatedUser);
+        userService.updateUser(id, updatedUser, roleIds);
         return "redirect:/admin";
     }
 

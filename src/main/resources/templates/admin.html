@@ -205,7 +205,7 @@
                                         <div class="modal fade" th:id="'delete_' + ${u.id}">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
-                                                    <form th:action="@{/admin/delete-user/{id}(id=${u.id})}"
+                                                    <form th:action="@{/admin/delete/{id}(id=${u.id})}"
                                                           method="post">
                                                         <div class="modal-header">
                                                             <h5 class="modal-title">Delete User</h5>
